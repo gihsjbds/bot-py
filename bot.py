@@ -28,13 +28,10 @@ def is_admin(chat_id):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        '🤖 *Redirect Bot Commands:*\n\n'
-        '/set `<id>` `<url>` - Set redirect for /group/<id>\n'
-        '/get `<id>` - Get current target\n'
-        '/del `<id>` - Delete mapping\n'
-        '/list - List all active redirects\n\n'
-        '_Example: /set 1 https://chat.whatsapp.com/ABC123_',
-        parse_mode='Markdown'
+        'Commands:\n'
+        '/set <id> <url> - set target for /group/<id>\n'
+        '/get <id> - get current target\n'
+        '/del <id> - delete mapping'
     )
 
 async def set_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -54,12 +51,7 @@ async def set_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     
     r.set(f'group:{group_id}', url)
-    await update.message.reply_text(
-        f'✅ *Saved!*\n\n'
-        f'🔗 {BASE_URL}/group/{group_id}\n'
-        f'➡️ {url}',
-        parse_mode='Markdown'
-    )
+    await update.message.reply_text(f'Saved: {BASE_URL}/group/{group_id} -> {url}')
 
 async def get_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(context.args) < 1:
@@ -70,15 +62,9 @@ async def get_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
     target = r.get(f'group:{group_id}')
     
     if target:
-        target_url = target.decode("utf-8")
-        await update.message.reply_text(
-            f'📋 *Group {group_id}:*\n\n'
-            f'🔗 {BASE_URL}/group/{group_id}\n'
-            f'➡️ {target_url}',
-            parse_mode='Markdown'
-        )
+        await update.message.reply_text(f'Current: {group_id} -> {target.decode("utf-8")}')
     else:
-        await update.message.reply_text(f'❌ No mapping found for group {group_id}.')
+        await update.message.reply_text('No mapping found.')
 
 async def del_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not is_admin(update.effective_chat.id):
@@ -91,34 +77,7 @@ async def del_target(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     group_id = context.args[0]
     r.delete(f'group:{group_id}')
-    await update.message.reply_text(f'✅ Deleted mapping for group {group_id}.')
-
-async def list_targets(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not is_admin(update.effective_chat.id):
-        await update.message.reply_text('Not authorized.')
-        return
-    
-    try:
-        # Get all group keys
-        keys = r.keys('group:*')
-        if not keys:
-            await update.message.reply_text('No redirects set yet.')
-            return
-        
-        message = '📋 *Active Redirects:*\n\n'
-        for key in keys[:20]:  # Limit to 20 to avoid message too long
-            group_id = key.decode('utf-8').replace('group:', '')
-            target = r.get(key)
-            if target:
-                target = target.decode('utf-8')
-                message += f'• `/group/{group_id}` → {target[:50]}...\n'
-        
-        if len(keys) > 20:
-            message += f'\n_... and {len(keys) - 20} more_'
-        
-        await update.message.reply_text(message, parse_mode='Markdown')
-    except Exception as e:
-        await update.message.reply_text(f'Error: {str(e)}')
+    await update.message.reply_text(f'Deleted mapping for {group_id}.')
 
 def main():
     app = Application.builder().token(token).build()
@@ -127,7 +86,6 @@ def main():
     app.add_handler(CommandHandler("set", set_target))
     app.add_handler(CommandHandler("get", get_target))
     app.add_handler(CommandHandler("del", del_target))
-    app.add_handler(CommandHandler("list", list_targets))
     
     print("Bot is running...")
     app.run_polling()
