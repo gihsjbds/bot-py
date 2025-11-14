@@ -19,7 +19,7 @@ if not token:
     print("Error: TELEGRAM_BOT_TOKEN not set")
     exit(1)
 
-BASE_URL = os.getenv('PUBLIC_BASE_URL', 'https://your-domain.vercel.app')
+BASE_URL = os.getenv('PUBLIC_BASE_URL', 'https://redirect-wa-production.up.railway.app')
 
 def is_admin(chat_id):
     if not admin_chat_id:
